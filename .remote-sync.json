@@ -1,0 +1,16 @@
+{
+  "uploadOnSave": true,
+  "useAtomicWrites": true,
+  "deleteLocal": false,
+  "hostname": "montserrat.salleurl.edu",
+  "port": "22",
+  "target": "PRACTICASO",
+  "ignore": [
+    ".remote-sync.json",
+    ".git/**"
+  ],
+  "username": "guillermo.palacin",
+  "password": "CH3COOCs",
+  "watch": [],
+  "transport": "scp"
+}
