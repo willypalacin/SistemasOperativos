@@ -1,5 +1,5 @@
-#ifndef _FICHEROS_H
-#define _FICHEROS_H
+#ifndef _inout_H
+#define _inout_H
 
 #include <time.h>
 #include <stdlib.h>
@@ -15,6 +15,9 @@
 
 
 #define FILE_ERROR "No se ha encontrado el archivo\n"
+#define STRING_1 "SHOW OPTIONS\n"
+#define STRING_2_1 "CONNECT"
+
 #define END_CHAR '\n'
 
 typedef struct {
@@ -23,10 +26,12 @@ typedef struct {
   char * ip;
   char * port;
   char ** conex;
+  int q;
 } User;
 
 
 
 #endif
 
-void FICHEROS_readFile(char * nombre, User * user);
+void INOUT_readFile(char * nombre, User * user);
+int INOUT_eligeOpcion(User * user);
