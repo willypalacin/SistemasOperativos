@@ -17,6 +17,7 @@
 #define FILE_ERROR "No se ha encontrado el archivo\n"
 #define STRING_1 "SHOW OPTIONS\n"
 #define STRING_2_1 "CONNECT"
+#define STRING_3 "SAY"
 
 #define END_CHAR '\n'
 
@@ -26,7 +27,9 @@ typedef struct {
   char * ip;
   char * port;
   char ** conex;
-  int q;
+  char ** users;
+  int q_conex;
+  int q_users;
 } User;
 
 

@@ -25,6 +25,39 @@ ssize_t readUntil(int fd, char end, char * string) {
   return n;
 }
 
+/*
+Version inspirada en la funcion readUntil
+pero cuando no haya file descriptor
+Se da por hecho que el caracter siempre va a existir
+*/
+char * readTillChar(char* s, char init ,char end){
+  printf("INIT es %c, end es %c\n", init, end );
+  char * aux = malloc(sizeof(char)*200);
+  aux[0]=' ';
+  unsigned int i = 0;
+  for(i = 0; i<strlen(s); i++) {
+    if(s[i] == init) break;
+  }
+  i++;
+  int j = 0;
+  while (s[i] != end) {
+    printf("AUX es %s\n", aux);
+    aux[j] = s[i];
+    i++; j++;
+    if(i>=strlen(s)) break;
+  }
+  if(i>=strlen(s)) {
+    aux[0]=' ';
+    aux[1]='\0';
+  }
+
+  aux[i - 1] = '\0';
+  printf("AUX es %s\n", aux);
+  return aux;
+
+
+}
+
 void INOUT_readFile(char * nombre, User * user) {
   ssize_t n;
   int i = 0;
@@ -46,7 +79,7 @@ void INOUT_readFile(char * nombre, User * user) {
       (*user).conex[i+1] = malloc(sizeof(char));
       i++;
     }
-    (*user).q = i+1;
+    (*user).q_conex = i+1;
 
 
     printf("EL USERNAME ES %s\n", (*user).username);
@@ -68,7 +101,7 @@ si coincide con CONNECT <puertoExistente> sera correcto
 int checkStringCase2(User * user, char * s) {
   char aux[100];
   int  i;
-  for (i = 0; i < (*user).q; i++) {
+  for (i = 0; i < (*user).q_conex; i++) {
    sprintf(aux, "CONNECT %s", (*user).conex[i]);
    if (strcmp(aux, s) == 0) {
      return 2;
@@ -96,10 +129,20 @@ Funcion que hace de menu. Comprueba las diferentes opciones.
 */
 int checkString(User * user, char * s) {
   int opcion;
+  char * nom_user;
+  char * texto;
   if (strcmp(s, STRING_1) == 0) return 1;
   else if (strcmp(substring(s, 0, 7), STRING_2_1) == 0) {      //Comprueba si hay escrita la palabra CONNECT.
     opcion = checkStringCase2(user, s);
-    printf("LA OPCION ES: %d \n", opcion);
+    return opcion;
+  }
+  else if(strcmp(substring(s, 0, 3), STRING_3) == 0) { //Comprueba si hay say
+     nom_user = readTillChar(s,' ',' ');
+     texto = readTillChar(s,'\"','\"');
+     printf("EL USER es %s.\n", nom_user);
+     printf("EL texto es %s.\n", texto);
+
+
   }
   return 1;
 

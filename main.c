@@ -8,8 +8,6 @@ Guillermo Palacín Gomez login: guillermo.palacin
 
 #define ARGUMENT_ERROR "EL NUMERO DE ARGUMENTOS ES INCORRECTO\n"
 
-
-
 void inicializaUser(User * user) {
   (*user).username = malloc(sizeof(char));
   (*user).audios = malloc(sizeof(char));
@@ -29,10 +27,8 @@ int main(int argc, char**argv) {
     INOUT_readFile(argv[1], &user);
   }
   do {
-    flag = eligeOpcion();
-  }while (flag == 0) {
-    /* code */
-  }
+    flag = INOUT_eligeOpcion(&user);
+  }while (flag == 0);
 
   return 0;
 }
