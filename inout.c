@@ -139,6 +139,15 @@ int checkStringCase2(User * user, char * s) {
   return -1;
 }
 
+void liberaMemoria(User * user,char * s) {
+  free((*user).username);
+  free((*user).audios);
+  free((*user).ip);
+  free((*user).port);
+  free((*user).url);
+  free(s);
+}
+
 char * substring(char * s, unsigned int init , unsigned int end) {
   unsigned int i;
   int j = 0;
@@ -190,8 +199,11 @@ int checkString(User * user, char * s) {
       write(1, CONNECTED, strlen(CONNECTED));
       write(1, (*user).users[0], strlen((*user).users[0]));
       write(1, "\n", 1);
+      return 2;
+    } else {
+      return 0;
     }
-    return opcion;
+
   }
   else if(strcmp(substring(s, 0, 3), STRING_3) == 0) { //Comprueba si hay say
      nom_user = readTillChar(s,' ',' ');
@@ -204,6 +216,7 @@ int checkString(User * user, char * s) {
   }
   else if(strcmp(substring(s, 0, 11), STRING_5) == 0) { //Comprueba si hay say
     nom_user = substring(s,12, strlen(s));
+    if (strcmp(nom_user,"")==0) return 0; 
     return controlError(nom_user, "a", 5);
   }
   else if(strcmp(substring(s, 0, 8), STRING_6) == 0) {
@@ -213,6 +226,7 @@ int checkString(User * user, char * s) {
   }
   else if(strcmp(substring(s, 0, 4), STRING_7) == 0) {
     write(1, DISCONNECTING, strlen(DISCONNECTING));
+    liberaMemoria(user, s);
     return 7;
   }
   return 0;
@@ -232,7 +246,7 @@ int INOUT_eligeOpcion(User * user) {
   }
   cadena[i - 1] = '\0';
   for(i = 0; cadena[i]; i++)
-      cadena[i] = toupper(cadena[i]);   //Pasamos a mayusculas. 
+      cadena[i] = toupper(cadena[i]);   //Pasamos a mayusculas.
 
   return checkString(user, cadena);
 }

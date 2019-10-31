@@ -26,11 +26,23 @@ void inicializaUser(User * user) {
 
 }
 
+void signalHandler(int sig) {
+
+	switch (sig) {
+		case SIGINT:
+			write(1, DISCONNECTING, sizeof(DISCONNECTING));
+			raise(SIGKILL);
+			break;
+	}
+}
+
+
 int main(int argc, char**argv) {
   User user;
   write(1,ST,strlen(ST));
   int flag = 0;
   inicializaUser(&user);
+  signal(SIGINT, signalHandler);
   if(argc != 2) {
     write(1, ARGUMENT_ERROR, strlen(ARGUMENT_ERROR));
   } else {
@@ -46,7 +58,7 @@ int main(int argc, char**argv) {
       write(1, INCORRECT_FORMAT, strlen(INCORRECT_FORMAT));
     }
 
-  }while (flag != 7);
+  } while (flag != 7);
 
   return 0;
 }
