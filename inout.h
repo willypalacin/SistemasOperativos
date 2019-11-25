@@ -12,7 +12,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <math.h>
+#include <pthread.h>
 #include <signal.h>
+#include "conexion.h"
+
+
 
 
 #define FILE_ERROR "No se ha encontrado el archivo\n"
@@ -25,9 +29,11 @@
 #define STRING_7 "EXIT"
 #define TESTING "Testing...\n"
 #define CONEX_AVAIL "%d connections available\n"
+#define PORT "%d\n"
 #define CONNECTING "Connecting...\n"
 #define CONNECTED " connected: "
 #define DISCONNECTING "Disconnecting Trinity...\n"
+
 
 #define END_CHAR '\n'
 
@@ -38,6 +44,8 @@ typedef struct {
   char * port;
   char * url;
   int  * ports;
+  int * ports_available;
+  int q_ports_available;
   char ** users;
   int q_ports;
   int q_users;
@@ -45,7 +53,9 @@ typedef struct {
 
 
 
-#endif
+
 
 void INOUT_readFile(char * nombre, User * user);
 int INOUT_eligeOpcion(User * user);
+
+#endif
