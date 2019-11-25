@@ -178,7 +178,7 @@ void messOpt1(User * user) {
   (*user).ports_available = malloc(sizeof(int));
 
   for (i = 0; i < (*user).q_ports; i++) {
-    fd = CONEXION_tryConnection((*user).ip, (*user).ports[i]);
+    fd = CONEXION_tryConnection((*user).ip, (*user).ports[i], (*user).username);
     if (fd != -1) {
       (*user).ports_available[counter] = (*user).ports[i];
       (*user).q_ports_available++;

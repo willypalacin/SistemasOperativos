@@ -20,9 +20,19 @@
 #include <pthread.h>
 
 
+typedef struct{
+  char type;
+  char * header;
+  int longitud;
+  char * data;
+} Trama;
+
 int CONEXION_launch_server(int port, char *ip, int *socket_fd);
 void  * CONEXION_server_run(void * server_socket);
 void CONEXION_inicializaThread(int * server_socket);
-int CONEXION_tryConnection(char *ip, int port);
+int CONEXION_tryConnection(char *ip, int port, char* username);
+void enviarTrama(int fd, Trama trama);
+void recepcioTrama(int fd, Trama *trama);
+char *get_message(int fd, char delimiter);
 
 #endif

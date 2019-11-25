@@ -28,6 +28,32 @@ int fd_client;
 
 int fd_tryToConnect;
 
+
+void enviarTrama(int fd, Trama trama){
+	write (fd, &(trama.type), sizeof(char));
+	char aux[3] = "[%s]\n";
+	char * infoHeader = malloc (sizeof(char) * (strlen(trama.header) + 2));
+	sprintf(infoHeader, aux, trama.header);
+	write (fd, infoHeader, strlen(infoHeader));
+	write (fd, &(trama.longitud), sizeof(int));
+	char * data = malloc (sizeof(char) * (strlen((trama.data)) + 2));
+	sprintf(data, aux, trama.data);
+	write (fd, data, strlen(data));
+	free(data);
+	free (infoHeader);
+}
+
+void recepcioTrama(int fd, Trama *trama){
+	read(fd,trama -> type, sizeof(char));
+	(*trama).header = get_message(fd, '\n');
+	read(fd, trama -> longitud, sizeof(int));
+	(*trama).data = get_message(fd, '\n');
+}
+
+
+
+
+
 char *get_message(int fd, char delimiter) {
 	char *msg = (char *) malloc(1);
 	char current;
@@ -80,12 +106,20 @@ void * CONEXION_server_run(void * server_socket) {
      //write(1, MSG_SERVER_INIT, sizeof(MSG_SERVER_INIT));
 
     while (1) {
-
+				Trama trama;
         //write(1, MSG_WAIT_CONN, sizeof(MSG_WAIT_CONN));
         fd_client = accept((*s_s), (void *) &c_addr, &c_len);
         write(1, MSG_NEW_CONN, sizeof(MSG_NEW_CONN));
         char* question = get_message(fd_client, '\n');
         write(1, question, strlen(question));
+				recepcioTrama(fd_client, &trama);
+				printf("La data es %s\n", &trama.data);
+				printf("El type es %c\n", &trama.type);
+				printf("La longitud es %d\n", &trama.longitud);
+				printf("El header es %s\n", &trama.header);
+				//char type;
+				//char * username = malloc (sizeof(char));
+				//type = recepcioTramaServer_Client(fd_client, &username);
 
         //sleep(20);
 
@@ -100,7 +134,7 @@ void * CONEXION_server_run(void * server_socket) {
 
 
 
-int CONEXION_tryConnection(char *ip, int port) {
+int CONEXION_tryConnection(char *ip, int port, char* username) {
   int aux = 0;
   struct sockaddr_in s_addr;
   int socket_conn = -1;
@@ -127,13 +161,26 @@ int CONEXION_tryConnection(char *ip, int port) {
       }
       else {
         char buff[128];
-        //sprintf(buff, PORT_OPEN, port);
+				Trama trama;
+				trama.type = '1';
+				trama.header = "TR_NAME";
+				trama.longitud = 5;
+				trama.data = "lluis";
+				enviarTrama(socket_conn, trama);
+				//sprintf(buff, PORT_OPEN, port);
         //write(1, buff, sizeof(buff));
         //(*counter)++;
         char antonio[20] = "antonio\n";
         write(socket_conn, antonio, strlen(antonio));
-        close(socket_conn);
 
+				char type = '1';
+				//enviarTrama(type, &username, socket_conn);
+
+
+
+
+
+				close(socket_conn);
       }
     }
 
