@@ -4,6 +4,8 @@
 This function reads until arrives to the end character.
 The function returns the number of bytes readed.
 */
+
+
 char * readUntil(int fd, char end, char * string) {
   ssize_t n;
   int i = 0;
@@ -101,6 +103,7 @@ void INOUT_readFile(char * nombre, User * user) {
       j++;
     }
     (*user).q_ports = atoi(port_f)-atoi(port_i)+1;
+
     /*while (n != 0) {
       n = readUntil(fd, END_CHAR, (*user).ports[i]);
       if (n == 0) break;
@@ -164,15 +167,43 @@ char * substring(char * s, unsigned int init , unsigned int end) {
   }
 }
 
-void messOpt1(User user) {
-  char *message = malloc(sizeof(char)* 70);
+void messOpt1(User * user) {
+  int i;
+  int fd;
+  int counter = 0;
+  char buff[128];
+  char buff2[128];
+  (*user).q_ports_available = 0;
+  free((*user).ports_available);
+  (*user).ports_available = malloc(sizeof(int));
+
+  for (i = 0; i < (*user).q_ports; i++) {
+    fd = CONEXION_tryConnection((*user).ip, (*user).ports[i]);
+    if (fd != -1) {
+      (*user).ports_available[counter] = (*user).ports[i];
+      (*user).q_ports_available++;
+      (*user).ports_available = realloc((*user).ports_available, counter +2);
+      counter++;
+    }
+  }
+  sprintf(buff, CONEX_AVAIL, counter);
+  write(1, buff, strlen(buff));
+  for(i = 0; i< counter; i++) {
+    sprintf(buff2, PORT, (*user).ports_available[i]);
+    write(1, buff2, strlen(buff2));
+
+  }
+
+
+  /*char *message = malloc(sizeof(char)* 70);
   char port_i[5];
   sprintf(port_i, "%d",(user).ports[0]);
   write(1, TESTING, strlen(TESTING));
+
   sprintf(message, CONEX_AVAIL, 1);
   write(1, message, strlen(message));
   write (1, port_i, strlen(port_i));
-  write(1, "\n", 1);
+  write(1, "\n", 1);*/
 }
 /*
 Funcion que hace de menu. Comprueba las diferentes opciones.
@@ -186,8 +217,9 @@ int checkString(User * user, char * s) {
   char port [6];
   char * audio;
   //char * message;
+
   if (strcmp(s, STRING_1) == 0) {
-    messOpt1(*user);
+    messOpt1(user);
     return 1;
   }
   else if (strcmp(substring(s, 0, 7), STRING_2_1) == 0) {      //Comprueba si hay escrita la palabra CONNECT.
@@ -216,7 +248,7 @@ int checkString(User * user, char * s) {
   }
   else if(strcmp(substring(s, 0, 11), STRING_5) == 0) { //Comprueba si hay say
     nom_user = substring(s,12, strlen(s));
-    if (strcmp(nom_user,"")==0) return 0; 
+    if (strcmp(nom_user,"")==0) return 0;
     return controlError(nom_user, "a", 5);
   }
   else if(strcmp(substring(s, 0, 8), STRING_6) == 0) {
@@ -245,8 +277,9 @@ int INOUT_eligeOpcion(User * user) {
     i++;
   }
   cadena[i - 1] = '\0';
-  for(i = 0; cadena[i]; i++)
+  for(i = 0; cadena[i]; i++){
       cadena[i] = toupper(cadena[i]);   //Pasamos a mayusculas.
+  }
 
   return checkString(user, cadena);
 }
