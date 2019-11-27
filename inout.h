@@ -1,6 +1,7 @@
 #ifndef _inout_H
 #define _inout_H
 
+#include "structures.h"
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,6 +20,7 @@
 
 
 
+
 #define FILE_ERROR "No se ha encontrado el archivo\n"
 #define STRING_1 "SHOW CONNECTIONS"
 #define STRING_2_1 "CONNECT"
@@ -33,24 +35,8 @@
 #define CONNECTING "Connecting...\n"
 #define CONNECTED " connected: "
 #define DISCONNECTING "Disconnecting Trinity...\n"
-
-
 #define END_CHAR '\n'
-
-typedef struct {
-  char * username;
-  char * audios;
-  char * ip;
-  char * port;
-  char * url;
-  int  * ports;
-  int * ports_available;
-  int q_ports_available;
-  char ** users;
-  int q_ports;
-  int q_users;
-} User;
-
+#define NO_USERS_FOUNDED "No hay usuarios encontrados con ese username\n"
 
 
 

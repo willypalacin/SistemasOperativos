@@ -1,6 +1,12 @@
 #ifndef _conexion_H
 #define _conexion_H
 
+
+#include "structures.h"
+#include "main.h"
+#include "inout.h"
+
+
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -20,19 +26,18 @@
 #include <pthread.h>
 
 
-typedef struct{
-  char type;
-  char * header;
-  int longitud;
-  char * data;
-} Trama;
+
+
 
 int CONEXION_launch_server(int port, char *ip, int *socket_fd);
 void  * CONEXION_server_run(void * server_socket);
 void CONEXION_inicializaThread(int * server_socket);
-int CONEXION_tryConnection(char *ip, int port, char* username);
-void enviarTrama(int fd, Trama trama);
-void recepcioTrama(int fd, Trama *trama);
+int CONEXION_tryConnection(char *ip, int port);
+void CONEXION_enviarTrama(int fd, Trama trama);
+int recepcioTrama(int fd, Trama *trama);
 char *get_message(int fd, char delimiter);
+int ConexionModo2(int socket_conn, User * user, char * texto);
+int ConexionModo1(int socket_conn, User * user);
+int ConexionModo0(int socket_conn, User * user);
 
 #endif

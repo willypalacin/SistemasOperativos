@@ -3,8 +3,11 @@ Lluís Camino Pérez login: lluis.Camino
 Guillermo Palacín Gomez login: guillermo.palacin
 */
 
-
+#include "main.h"
 #include "inout.h"
+#include "structures.h"
+#include "conexion.h"
+
 
 
 
@@ -13,7 +16,9 @@ Guillermo Palacín Gomez login: guillermo.palacin
 #define USERNAME "$%s:"
 #define INCORRECT_FORMAT "La opcion no es correcta, asegurese de introducirlo segun las instrucciones\n"
 
+
 int server_socket;
+User user;
 
 void inicializaUser(User * user) {
   (*user).username = malloc(sizeof(char));
@@ -24,9 +29,15 @@ void inicializaUser(User * user) {
   //(*user).ports = malloc(sizeof(int));
   (*user).users = malloc(sizeof(char *));
   (*user).users[0] = malloc(sizeof(char)*50);
-  strcpy((*user).users[0], "antonio");
+
   (*user).q_ports = 0;
   (*user).ports_available = malloc(sizeof(int));
+  (*user).port_asociated_user = malloc(sizeof(int));
+
+  (*user).users_del_server = malloc(sizeof(char *));
+  (*user).users_del_server[0] = malloc(sizeof(char)*50);
+  (*user).port_asociated_user_del_server = malloc(sizeof(int));
+  (*user).q_users_del_server = 0;
 
 }
 
@@ -40,9 +51,12 @@ void signalHandler(int sig) {
 	}
 }
 
+User * MAIN_getUser() {
+  return &user;
+}
 
 int main(int argc, char**argv) {
-  User user;
+
   int flag = 0;
   write(1,ST,strlen(ST));
   inicializaUser(&user);

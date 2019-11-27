@@ -52,6 +52,20 @@ char * readTillChar(char* s, char init ,char end){
   aux[i - 1] = '\0';
   return aux;
 }
+/*
+Busca si el usuario existe en el array y en caso armativo devuelve el puerto
+*/
+int findUserInArray(char * nom_user, User user) {
+  int i;
+  int port = -1;
+  for(i=0;i<user.q_users;i++) {
+    if(strcasecmp(user.users[i], nom_user) == 0)
+      break;
+  }
+  port = user.port_asociated_user[i];
+  return port;
+
+}
 
 char * readTillCharDouble(char* s, char init ,char end, int pos){
   char * aux = malloc(sizeof(char)*200);
@@ -133,10 +147,10 @@ si coincide con CONNECT <puertoExistente> sera correcto
 int checkStringCase2(User * user, char * s) {
   char aux[100];
   int  i;
-  for (i = 0; i < (*user).q_ports; i++) {
-   sprintf(aux, "CONNECT %d", (*user).ports[i]);
+  for (i = 0; i < (*user).q_ports_available; i++) {
+   sprintf(aux, "CONNECT %d", (*user).ports_available[i]);
    if (strcmp(aux, s) == 0) {
-     return i;
+     return (*user).ports_available[i];
    }
  }
   return -1;
@@ -178,8 +192,9 @@ void messOpt1(User * user) {
   (*user).ports_available = malloc(sizeof(int));
 
   for (i = 0; i < (*user).q_ports; i++) {
-    fd = CONEXION_tryConnection((*user).ip, (*user).ports[i], (*user).username);
+    fd = CONEXION_tryConnection((*user).ip, (*user).ports[i]);
     if (fd != -1) {
+      ConexionModo0(fd, user);
       (*user).ports_available[counter] = (*user).ports[i];
       (*user).q_ports_available++;
       (*user).ports_available = realloc((*user).ports_available, counter +2);
@@ -216,6 +231,7 @@ int checkString(User * user, char * s) {
   char * texto;
   char port [6];
   char * audio;
+  int t2;
   //char * message;
 
   if (strcmp(s, STRING_1) == 0) {
@@ -223,28 +239,51 @@ int checkString(User * user, char * s) {
     return 1;
   }
   else if (strcmp(substring(s, 0, 7), STRING_2_1) == 0) {      //Comprueba si hay escrita la palabra CONNECT.
-    opcion = checkStringCase2(user, s);
+    opcion = checkStringCase2(user, s);  //Pone opcion pero devuelve el puerto
     if (opcion !=-1) {
       write(1, CONNECTING, strlen(CONNECTING));
-      sprintf(port, "%d", (*user).ports[opcion]);
-      write(1, port, strlen(port));
-      write(1, CONNECTED, strlen(CONNECTED));
-      write(1, (*user).users[0], strlen((*user).users[0]));
-      write(1, "\n", 1);
+      t2 = CONEXION_tryConnection((*user).ip, opcion);
+      ConexionModo1(t2, user);
+      if (t2 > 0){
+        sprintf(port, "%d", opcion);
+        write(1, port, strlen(port));
+        write(1, CONNECTED, strlen(CONNECTED));
+        int q = (*user).q_users;
+        (*user).users[q-1] = substring((*user).users[q-1], 1, strlen((*user).users[q-1])-1);
+        write(1, (*user).users[q-1], strlen((*user).users[q-1]));
+        write(1, "\n", 1);
+      }
       return 2;
     } else {
       return 0;
     }
 
   }
-  else if(strcmp(substring(s, 0, 3), STRING_3) == 0) { //Comprueba si hay say
+  else if(strcmp(substring(s, 0, 3), STRING_3) == 0) {
+     int error;
+     int port; //Comprueba si hay say
      nom_user = readTillChar(s,' ',' ');
      texto = readTillChar(s,'\"','\"');
-     return controlError(texto, nom_user, 3);
+     error = controlError(texto, nom_user, 3);
+     port = findUserInArray(nom_user, *user); //En realidad port es fd.
+
+     if(port!=-1) {
+       //strcpy((*user).mensaje, texto);
+
+       ConexionModo2(port, user, texto);
+
+       //CONEXION_tryConnection((*user).ip, port, user, 2);
+     }else {
+       write(1, NO_USERS_FOUNDED, strlen(NO_USERS_FOUNDED));
+     }
+     return error;
   }
   else if(strcmp(substring(s, 0, 9), STRING_4) == 0) { //Comprueba si hay say
+     int error;
      texto = readTillChar(s,'\"','\"');
-     return controlError(texto, "a", 4);
+     error = controlError(texto, "a", 4);
+
+     return error;
   }
   else if(strcmp(substring(s, 0, 11), STRING_5) == 0) { //Comprueba si hay say
     nom_user = substring(s,12, strlen(s));
