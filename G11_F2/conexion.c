@@ -26,8 +26,6 @@
 #define TR_NAME "[TR_NAME]"
 #define CON_OK "[CON_OK]"
 #define M_S_G "[MSG]"
-#define CONKO "[CONKO]"
-#define USER_CONNECTED "Usuario conectado: %s\n"
 
 int fd_client;
 int fd_tryToConnect;
@@ -48,7 +46,7 @@ void CONEXION_enviarTrama(int fd, Trama trama){
 	}
 }
 
-char * get_message(int fd, char delimiter) {
+char *get_message(int fd, char delimiter) {
 	char *msg = (char *) malloc(1);
 	char current;
 	int i = 0;
@@ -89,7 +87,7 @@ char * readUntillChar(char* s, char init ,char end){
 
 int recepcioTrama(int fd, Trama *trama){
 	(*trama).type = -1;
-	read(fd, &((*trama).type), sizeof(short));
+	read(fd, &((*trama).type), sizeof(int));
 	(*trama).header = get_message(fd, ']');
 	read(fd, &((*trama).longitud), sizeof(int));
 	if ((*trama).longitud == 0) return 0;
@@ -109,10 +107,8 @@ int CONEXION_launch_server(int port, char *ip, int *socket_fd) {
         s_addr.sin_port = htons (port);
         s_addr.sin_addr.s_addr = inet_addr(ip);
 
-        if (bind (*socket_fd, (void *) &s_addr, sizeof (s_addr)) < 0) {
+        if (bind (*socket_fd, (void *) &s_addr, sizeof (s_addr)) < 0)
             write(1, MSG_ERR_BIND, sizeof(MSG_ERR_BIND));
-            return 0;
-        }
         else {
          	listen(*socket_fd, LISTEN_BACKLOG);
           return 1;
@@ -121,26 +117,9 @@ int CONEXION_launch_server(int port, char *ip, int *socket_fd) {
     return 0;
 }
 
-int findClientAndDelete(char * usnm, int * port_delete, char ** users, int q_users){
-	int i;
-	int index = -1;
-	for(i=0;i<q_users;i++){
-		if (strcmp(usnm, users[i]) == 0) {
-			index = i;
-			users[i][0] = '\0';
-			port_delete[i] = 0;
-			return i;
-		}
-	}
-	return index;
-
-}
-
 void * CONEXION_gestionFdClientes(void * fd_c) {
 	Trama trama;
 	Trama trama2;
-  char * buff = malloc(sizeof(char)*128);
-	char * buff2 = malloc(sizeof(char)*128);
 	User * user = MAIN_getUser();
 	int t;
 	char * usnm;
@@ -160,10 +139,6 @@ void * CONEXION_gestionFdClientes(void * fd_c) {
 				(*user).port_asociated_user_del_server = realloc((*user).port_asociated_user_del_server, (*user).q_users_del_server + 1);
 				strcpy((*user).users_del_server[(*user).q_users_del_server - 1], trama.data);
 				(*user).port_asociated_user_del_server[(*user).q_users_del_server - 1] = fd_client;
-
-        sprintf(buff, USER_CONNECTED, readUntillChar(trama.data, '[' ,']'));
-
-        write(1, buff, strlen(buff));
 				trama2.type = '1';
 				trama2.header = malloc (sizeof(char) * strlen(CON_OK));
 				strcpy(trama2.header, "CONOK");
@@ -171,16 +146,13 @@ void * CONEXION_gestionFdClientes(void * fd_c) {
 				trama2.data = malloc (sizeof(char) * trama2.longitud);
 				strcpy(trama2.data, (*user).username);
 				CONEXION_enviarTrama(fd_client, trama2);
-        write(1,"$",2);
-        write(1,(*user).username,strlen((*user).username));
-        write(1,":",1);
 
 				break;
 			case 2:
-			  write(1, "\n[", 2);
+			  write(1, "\n$", 3);
 			  usnm = readUntillChar((*user).users_del_server[index],'[', ']');
 				write(1, usnm, strlen(usnm));
-				write(1, "]: ", 3);
+				write(1, ": ", 2);
 				char * data = readUntillChar(trama.data, '[', ']');
 				write(1, data, strlen(data));
 				trama2.type = '2';
@@ -188,31 +160,14 @@ void * CONEXION_gestionFdClientes(void * fd_c) {
 				strcpy(trama2.header, "MSGOK");
 				trama2.longitud = 0;
 				CONEXION_enviarTrama(fd_client, trama2);
-        write(1,"\n$",2);
-        write(1,(*user).username,strlen((*user).username));
-        write(1,":",1);
-
 				break;
-			case 6:
-				trama2.type = '6';
-				trama2.header = malloc (sizeof(char) * strlen(CONKO));
-				strcpy(trama2.header, "CONKO");
-				trama2.longitud = 0;
-				trama2.data = "";
-
-				CONEXION_enviarTrama(fd_client, trama2);
-				write(1, trama.data, strlen(trama.data));
-				sprintf(buff2, "El cliente %s se ha desconectado\n",  readUntillChar(trama.data, '[', ']'));
-				findClientAndDelete(trama.data, (*user).real_port_asociated_user, (*user).users, (*user).q_users);
-				write(1, buff2, strlen(buff2));
-				close(fd_client);
-
 		}
 		//close(fd_client);
-
 	}
 	return 0;
 }
+
+
 
 void * CONEXION_server_run(void * server_socket) {
     struct sockaddr_in c_addr;
@@ -250,7 +205,6 @@ int CONEXION_tryConnection(char *ip, int port) {
 	}
 
 	/*Envia la trama correspondiente al modo 0*/
-
 int ConexionModo0(int socket_conn, User * user) {
 	Trama trama;
 	trama.type = '0';
@@ -279,7 +233,6 @@ int ConexionModo1(int socket_conn, User * user){
 		(*user).q_users = (*user).q_users + 1;
 		(*user).users = realloc((*user).users, (*user).q_users + 1);
 		(*user).port_asociated_user = realloc((*user).port_asociated_user, (*user).q_users + 1);
-    (*user).real_port_asociated_user = realloc((*user).real_port_asociated_user, (*user).q_users + 1);
 		strcpy((*user).users[(*user).q_users - 1], trama2.data);
 		(*user).port_asociated_user[(*user).q_users - 1] = socket_conn;
 		return 1;
@@ -288,6 +241,7 @@ int ConexionModo1(int socket_conn, User * user){
 int ConexionModo2(int socket_conn, char * texto) {
 	Trama trama;
 	Trama trama2;
+
 	trama.type = '2';
 	trama.header = malloc (sizeof(char) * strlen(M_S_G));
 	strcpy(trama.header, "MSG");
@@ -299,20 +253,8 @@ int ConexionModo2(int socket_conn, char * texto) {
 	return 2;
 }
 
-int ConexionModo6(int socket_conn, char * texto) {
-	Trama trama;
-	Trama trama2;
-	trama.type = '6';
-	trama.header = malloc (sizeof(char) * 2);
-	strcpy(trama.header, "");
-	trama.longitud = strlen(texto) + 2;
-	trama.data = malloc (sizeof(char) * trama.longitud);
-	strcpy(trama.data, texto);
-	CONEXION_enviarTrama(socket_conn, trama);
-	recepcioTrama(socket_conn, &trama2);
-	if (trama2.type=='6') return 6;
-	return 2;
-}
+
+
 void CONEXION_inicializaThread(int * server_socket) {
   pthread_t t1;
   pthread_create (&t1, NULL, CONEXION_server_run, server_socket);

@@ -1,0 +1,33 @@
+DONE - Recordeu que podeu utlitzar l'operador -> per accedir al camp d'un punter (*a.b == a->b)
+
+DONE - "Say" deixa el programa penjat si no hi ha ningú connectat, sigui quin sigui el missatge
+
+DONE - Si el servidor no es pot crear, el programa segueix funcionant. Millor fer que directament no s'executi res
+
+DONE - Un cop connectat a un servidor, si fem show connections ja no apareix un altre cop. Hauria d'apareixer el seu port juntament amb el seu nom.
+
+DONE - "Say" mostra el missatge amb el format incorrecte al servidor. El format hauria de ser "[NomClient]:Message"
+
+DONE- "Say" mostra sempre el missatge rebut en majúscules
+
+NOMEHAPASADO- Connect a vegades no funciona, es queda penjat (Connect 8000)
+
+DONE - Quan rebeu un missatge, feu que es torni a mostrar el vostre nom, que torni a apareixer bé la shell per introduir comandes
+
+TAREA PARA LLUIS - Quan feu el fork() per a cridar el script cal que espereu a que el fill "mori"
+
+DONE - Estaria bé informar pel servidor dels usuaris que es connecten.
+
+DONE - Quan un usuari es desconnecta d'un servidor s'hauria d'informar per la pantalla del servidor.
+
+DONE - Quan el Trinity s'interrumpeixi (Control + C) cal que tanqui tots els fd que tingui oberts en aquell moment (tan com a client com a servidor).
+
+PREGUNTAR NO ENTIENDO - Si intenteu fer un "say" a agun servidor que s'ha caigut, el Trinity es tanca. Feu que es quedi obert i que es desconnecti en cas que detecti una desconnexió
+
+?? - La funció genèrica que envia una trama, jo faria que rebés per paràmetre el que es vol enviar, és a dir: void CONEXION_enviarTrama (int fd, char type, char* header, char* data)
+
+DONE - El camp "length" de les trames no pot ser un int, ja que un int pot ocupar o 2 o 4 bytes depenent de l'arquitectura
+
+- Reviseu l'alliberament de la memòria, podeu fer ús de Valgrind (instal·lat a montserrat)
+
+DONE - Falta comentar el codi

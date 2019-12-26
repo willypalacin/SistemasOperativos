@@ -31,7 +31,7 @@
 #define STRING_7 "EXIT"
 #define TESTING "Testing...\n"
 #define CONEX_AVAIL "%d connections available\n"
-#define PORT "%d "
+#define PORT "%d\n"
 #define CONNECTING "Connecting...\n"
 #define CONNECTED " connected: "
 #define DISCONNECTING "Disconnecting Trinity...\n"
@@ -45,7 +45,5 @@
 
 void INOUT_readFile(char * nombre, User * user);
 int INOUT_eligeOpcion(User * user);
-void liberaMemoria(User * user);
-
 
 #endif

@@ -88,12 +88,10 @@ int findUserInArray(char * nom_user, User user) {
   int i;
   int port = -1;
   for(i=0;i<user.q_users;i++) {
-    if(strcasecmp(user.users[i], nom_user) == 0){
-      port = user.port_asociated_user[i];
+    if(strcasecmp(user.users[i], nom_user) == 0)
       break;
-    }
   }
-
+  port = user.port_asociated_user[i];
   return port;
 
 }
@@ -180,14 +178,14 @@ int checkStringCase2(User * user, char * s) {
   int  i;
   for (i = 0; i < (*user).q_ports_available; i++) {
    sprintf(aux, "CONNECT %d", (*user).ports_available[i]);
-   if (strcasecmp(aux, s) == 0) {
+   if (strcmp(aux, s) == 0) {
      return (*user).ports_available[i];
    }
  }
   return -1;
 }
 
-void liberaMemoria(User * user) {
+void liberaMemoria(User * user,char * s) {
   int i;
   free((*user).username);
   free((*user).audios);
@@ -196,12 +194,12 @@ void liberaMemoria(User * user) {
   free((*user).url);
   free((*user).users_del_server);
 
+  free(s);
   //Cierro Sockets
   for (i = 0; i< (*user).q_users_del_server; i++) {
     close((*user).port_asociated_user_del_server[i]);
   }
   free((*user).port_asociated_user_del_server);
-
 }
 
 char * substring(char * s, unsigned int init , unsigned int end) {
@@ -220,15 +218,6 @@ char * substring(char * s, unsigned int init , unsigned int end) {
   }
 }
 
-int getUsernamePortAsociated(int puerto, int * arr_puertos, int q) {
-  int i = -1;
-  for (int i = 0; i < q; i++) {
-    if(arr_puertos[i] == puerto)
-      return i;
-  }
-  return i;
-}
-
 void parseaPuertos(char * s, User * user){
   unsigned int i;
   unsigned int counter = 0;
@@ -236,7 +225,6 @@ void parseaPuertos(char * s, User * user){
   char * puerto;
   char buff[128];
   char buff2[128];
-  int i_usnm;
   for (i=0;i<strlen(s); i++){
     if(s[i] == '\n') {
       counter++;
@@ -251,14 +239,52 @@ void parseaPuertos(char * s, User * user){
     texto = readTillChar(s,'p','n');
     puerto = readTillChar(texto, ' ', ' ');
     (*user).ports_available[i] = atoi(puerto);
-    i_usnm = getUsernamePortAsociated(atoi(puerto), (*user).real_port_asociated_user, (*user).q_users);
     sprintf(buff2, PORT, (*user).ports_available[i]);
     write(1, buff2, strlen(buff2));
-    if (i_usnm != -1) write(1, (*user).users[i_usnm], strlen((*user).users[i_usnm]));
-    write(1, "\n", 1);
   }
+
+
 }
 
+void messOpt1(User * user) {
+  int i;
+  int fd;
+  int counter = 0;
+  char buff[128];
+  char buff2[128];
+  (*user).q_ports_available = 0;
+  free((*user).ports_available);
+  (*user).ports_available = malloc(sizeof(int));
+
+  for (i = 0; i < (*user).q_ports; i++) {
+    fd = CONEXION_tryConnection((*user).ip, (*user).ports[i]);
+    if (fd != -1) {
+      ConexionModo0(fd, user);
+      (*user).ports_available[counter] = (*user).ports[i];
+      (*user).q_ports_available++;
+      (*user).ports_available = realloc((*user).ports_available, counter +2);
+      counter++;
+    }
+  }
+  sprintf(buff, CONEX_AVAIL, counter);
+  write(1, buff, strlen(buff));
+  for(i = 0; i< counter; i++) {
+    sprintf(buff2, PORT, (*user).ports_available[i]);
+    write(1, buff2, strlen(buff2));
+
+  }
+
+
+  /*char *message = malloc(sizeof(char)* 70);
+  char port_i[5];
+  sprintf(port_i, "%d",(user).ports[0]);
+  write(1, TESTING, strlen(TESTING));
+
+  sprintf(message, CONEX_AVAIL, 1);
+  write(1, message, strlen(message));
+  write (1, port_i, strlen(port_i));
+  write(1, "\n", 1);*/
+}
 /*
 Funcion que hace de menu. Comprueba las diferentes opciones.
 */
@@ -273,7 +299,7 @@ int checkString(User * user, char * s) {
   int t2;
   //char * message;
 
-  if (strcasecmp(s, STRING_1) == 0) {
+  if (strcmp(s, STRING_1) == 0) {
     //messOpt1(user);
     char * mensaje = readShowCon(user);
     //sleep(5);
@@ -281,13 +307,12 @@ int checkString(User * user, char * s) {
     parseaPuertos(mensaje, user);
     return 1;
   }
-  else if (strcasecmp(substring(s, 0, 7), STRING_2_1) == 0) {      //Comprueba si hay escrita la palabra CONNECT.
+  else if (strcmp(substring(s, 0, 7), STRING_2_1) == 0) {      //Comprueba si hay escrita la palabra CONNECT.
     opcion = checkStringCase2(user, s);  //Pone opcion pero devuelve el puerto
     if (opcion !=-1) {
       write(1, CONNECTING, strlen(CONNECTING));
       t2 = CONEXION_tryConnection((*user).ip, opcion);
       ConexionModo1(t2, user);
-      (*user).real_port_asociated_user[(*user).q_users - 1] = opcion;
       if (t2 > 0){
         sprintf(port, "%d", opcion);
         write(1, port, strlen(port));
@@ -303,14 +328,16 @@ int checkString(User * user, char * s) {
     }
 
   }
-  else if(strcasecmp(substring(s, 0, 3), STRING_3) == 0) {
+  else if(strcmp(substring(s, 0, 3), STRING_3) == 0) {
      int error;
      int port; //Comprueba si hay say
      nom_user = readTillChar(s,' ',' ');
      texto = readTillChar(s,'\"','\"');
      error = controlError(texto, nom_user, 3);
      port = findUserInArray(nom_user, *user); //En realidad port es fd.
-     if (port!=-1) {
+
+     if(port!=-1) {
+       //strcpy((*user).mensaje, texto);
 
        ConexionModo2(port, texto);
 
@@ -320,30 +347,26 @@ int checkString(User * user, char * s) {
      }
      return error;
   }
-  else if(strcasecmp(substring(s, 0, 9), STRING_4) == 0) { //Comprueba si hay say
+  else if(strcmp(substring(s, 0, 9), STRING_4) == 0) { //Comprueba si hay say
      int error;
      texto = readTillChar(s,'\"','\"');
      error = controlError(texto, "a", 4);
+
      return error;
   }
-  else if(strcasecmp(substring(s, 0, 11), STRING_5) == 0) { //Comprueba si hay say
+  else if(strcmp(substring(s, 0, 11), STRING_5) == 0) { //Comprueba si hay say
     nom_user = substring(s,12, strlen(s));
     if (strcmp(nom_user,"")==0) return 0;
     return controlError(nom_user, "a", 5);
   }
-  else if(strcasecmp(substring(s, 0, 8), STRING_6) == 0) {
+  else if(strcmp(substring(s, 0, 8), STRING_6) == 0) {
     nom_user = readTillChar(s,' ',' ');
     audio = readTillCharDouble(s,' ','\n', 2); //DOble es que lee desde el segundo espacio.
     return controlError(nom_user, audio, 6);
   }
-  else if(strcasecmp(substring(s, 0, 4), STRING_7) == 0) {
+  else if(strcmp(substring(s, 0, 4), STRING_7) == 0) {
     write(1, DISCONNECTING, strlen(DISCONNECTING));
-    int i = 0;
-    for(i=0;i<(*user).q_users; i++)
-      ConexionModo6((*user).port_asociated_user[i], (*user).username );
-
-    liberaMemoria(user);
-    free(s);
+    liberaMemoria(user, s);
     return 7;
   }
   return 0;
@@ -362,6 +385,9 @@ int INOUT_eligeOpcion(User * user) {
     i++;
   }
   cadena[i - 1] = '\0';
+  for(i = 0; cadena[i]; i++){
+      cadena[i] = toupper(cadena[i]);   //Pasamos a mayusculas.
+  }
 
   return checkString(user, cadena);
 }

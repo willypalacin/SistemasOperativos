@@ -39,6 +39,5 @@ char *get_message(int fd, char delimiter);
 int ConexionModo2(int socket_conn, char * texto);
 int ConexionModo1(int socket_conn, User * user);
 int ConexionModo0(int socket_conn, User * user);
-int ConexionModo6(int socket_conn, char * texto);
 
 #endif

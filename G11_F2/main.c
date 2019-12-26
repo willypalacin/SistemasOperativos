@@ -19,9 +19,7 @@ Guillermo Palacín Gomez login: guillermo.palacin
 
 int server_socket;
 User user;
-/*
-Funcion que inicia los parametros necesarios para el usuario.
-*/
+
 void inicializaUser(User * user) {
   (*user).username = malloc(sizeof(char));
   (*user).audios = malloc(sizeof(char));
@@ -35,7 +33,6 @@ void inicializaUser(User * user) {
   (*user).q_ports = 0;
   (*user).ports_available = malloc(sizeof(int));
   (*user).port_asociated_user = malloc(sizeof(int));
-  (*user).real_port_asociated_user = malloc(sizeof(int));
 
   (*user).users_del_server = malloc(sizeof(char *));
   (*user).users_del_server[0] = malloc(sizeof(char)*50);
@@ -44,14 +41,11 @@ void inicializaUser(User * user) {
 
 }
 
-
-
 void signalHandler(int sig) {
 
 	switch (sig) {
 		case SIGINT:
 			write(1, DISCONNECTING, sizeof(DISCONNECTING));
-      liberaMemoria(&user);
 			raise(SIGKILL);
 			break;
 	}
@@ -74,10 +68,8 @@ int main(int argc, char**argv) {
     if (CONEXION_launch_server(atoi((user).port), (user).ip, &server_socket)) {
       //signal(SIGINT, handle_signal);
       CONEXION_inicializaThread(&server_socket);
-    } else {
-      exit(0);
     }
-    flag++;
+      flag++;
   }
 
   do {
