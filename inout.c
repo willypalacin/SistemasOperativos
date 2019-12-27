@@ -320,18 +320,26 @@ int checkString(User * user, char * s) {
      }
      return error;
   }
-  else if(strcasecmp(substring(s, 0, 9), STRING_4) == 0) { //Comprueba si hay say
+  else if(strcasecmp(substring(s, 0, 9), STRING_4) == 0) { //Comprueba si hay BROADCAST
      int error;
      texto = readTillChar(s,'\"','\"');
      error = controlError(texto, "a", 4);
      return error;
   }
-  else if(strcasecmp(substring(s, 0, 11), STRING_5) == 0) { //Comprueba si hay say
+  else if(strcasecmp(substring(s, 0, 11), STRING_5) == 0) { //SHOW AUDIOS
+    int error, port;
+    char * audiosFiles;
     nom_user = substring(s,12, strlen(s));
     if (strcmp(nom_user,"")==0) return 0;
-    return controlError(nom_user, "a", 5);
+    port = findUserInArray(nom_user, *user);
+    if (port!= -1) {
+      audiosFiles = ConexionModo4(port);
+      write(1, audiosFiles, strlen(audiosFiles));
+    }//Devuelve el file descriptor
+    error = controlError(nom_user, "a", 5);
+    return error;
   }
-  else if(strcasecmp(substring(s, 0, 8), STRING_6) == 0) {
+  else if(strcasecmp(substring(s, 0, 8), STRING_6) == 0) { //DOWNLOAD
     nom_user = readTillChar(s,' ',' ');
     audio = readTillCharDouble(s,' ','\n', 2); //DOble es que lee desde el segundo espacio.
     return controlError(nom_user, audio, 6);

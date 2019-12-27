@@ -27,6 +27,7 @@
 #define CON_OK "[CON_OK]"
 #define M_S_G "[MSG]"
 #define CONKO "[CONKO]"
+#define SH_AUDIOS "[SHOW_AUDIOS]"
 #define USER_CONNECTED "Usuario conectado: %s\n"
 
 int fd_client;
@@ -39,13 +40,36 @@ void CONEXION_enviarTrama(int fd, Trama trama){
 	sprintf(infoHeader, AUX, trama.header);
 	write (fd, infoHeader, strlen(infoHeader));
 	write (fd, &(trama.longitud), sizeof(int));
-	if(trama.longitud!=0) {
+	//if(trama.longitud!=0) {
 		char * data = malloc (sizeof(char) * (strlen((trama.data)) + 2));
 		sprintf(data, AUX, trama.data);
 		write (fd, data, strlen(data));
 		free(data);
 		free (infoHeader);
-	}
+	//}
+}
+/*
+Funcion que se encarga de leer los archivos pasado por parametro y los devuelve.
+*/
+char * leeDirectorio(char * directorio) {
+  struct dirent *de;
+  char buff[100];
+  char * audiosFiles = malloc(sizeof(char)*500);
+  sprintf(buff, "./%s", directorio);
+  DIR *dr = opendir(buff);
+  if (dr == NULL)  {
+    printf("No se ha podido abrir el directorio");
+    return 0;
+  }
+  while ((de = readdir(dr)) != NULL){
+        if(strcmp(de->d_name, ".")!= 0 && strcmp(de->d_name, "..")!=0){
+          strcat(audiosFiles,de->d_name);
+          strcat(audiosFiles,"\n");
+        }
+      }
+
+  closedir(dr);
+  return audiosFiles;
 }
 
 char * get_message(int fd, char delimiter) {
@@ -92,7 +116,7 @@ int recepcioTrama(int fd, Trama *trama){
 	read(fd, &((*trama).type), sizeof(short));
 	(*trama).header = get_message(fd, ']');
 	read(fd, &((*trama).longitud), sizeof(int));
-	if ((*trama).longitud == 0) return 0;
+	//if ((*trama).longitud == 0) return ((*trama).type - '0');
 	(*trama).data = get_message(fd, ']');
 	return ((*trama).type - '0');
 }
@@ -191,7 +215,15 @@ void * CONEXION_gestionFdClientes(void * fd_c) {
         write(1,"\n$",2);
         write(1,(*user).username,strlen((*user).username));
         write(1,":",1);
+				break;
+			case 4:
+				trama2.type = '4';
+				trama2.data = leeDirectorio((*user).audios);
+				trama2.header = malloc (sizeof(char) * strlen("[LIST_AUDIOS]")+2);
+				strcpy(trama2.header, "LIST_AUDIOS");
+				trama2.longitud = 0;
 
+				CONEXION_enviarTrama(fd_client, trama2);
 				break;
 			case 6:
 				trama2.type = '6';
@@ -297,6 +329,19 @@ int ConexionModo2(int socket_conn, char * texto) {
 	CONEXION_enviarTrama(socket_conn, trama);
 	recepcioTrama(socket_conn, &trama2);
 	return 2;
+}
+
+char * ConexionModo4(int socket_conn) {
+	Trama trama;
+	Trama trama2;
+	trama.type = '4';
+	trama.header = malloc(sizeof(char) * strlen(SH_AUDIOS));
+	strcpy(trama.header, "SHOW_AUDIOS");
+	trama.longitud = 0;
+	trama.data = "";
+	CONEXION_enviarTrama(socket_conn, trama);
+	recepcioTrama(socket_conn, &trama2);
+	return readUntillChar(trama2.data, '[', ']');
 }
 
 int ConexionModo6(int socket_conn, char * texto) {
