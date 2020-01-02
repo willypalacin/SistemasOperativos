@@ -340,9 +340,15 @@ int checkString(User * user, char * s) {
     return error;
   }
   else if(strcasecmp(substring(s, 0, 8), STRING_6) == 0) { //DOWNLOAD
+    int error, port, ok;
     nom_user = readTillChar(s,' ',' ');
-    audio = readTillCharDouble(s,' ','\n', 2); //DOble es que lee desde el segundo espacio.
-    return controlError(nom_user, audio, 6);
+    audio = readTillCharDouble(s,' ','\n', 2);  //DOble es que lee desde el segundo espacio.
+    error = controlError(nom_user, audio, 6);
+    port = findUserInArray(nom_user, *user);
+    if (port!= -1) {
+      ok = ConexionModo5(port, audio, (*user).audios);
+    }
+    return error;
   }
   else if(strcasecmp(substring(s, 0, 4), STRING_7) == 0) {
     write(1, DISCONNECTING, strlen(DISCONNECTING));

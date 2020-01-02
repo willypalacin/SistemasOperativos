@@ -44,5 +44,6 @@ int ConexionModo1(int socket_conn, User * user);
 int ConexionModo0(int socket_conn, User * user);
 int ConexionModo6(int socket_conn, char * texto);
 char * ConexionModo4(int socket_conn);
+int ConexionModo5(int socket_conn, char * texto, char * audios);
 
 #endif

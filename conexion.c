@@ -33,13 +33,97 @@
 int fd_client;
 int fd_tryToConnect;
 
+char * ejecutaMD5(char * nombre) {
+  pid_t pid;
+  int fd[2];
+  pipe(fd);
+  pid = fork();
+
+  char * buffer = malloc(sizeof(char)*1000);
+  if(pid==0){
+      dup2(fd[WRITE_END], 1); //duplicamos el fd de escribir
+      close(fd[READ_END]);
+      //execl("md5sum",nombre, (char*) NULL);
+      execlp("md5sum" , "md5sum", nombre ,(char*) NULL);
+      write (1, "Failed to execute show_connections.sh\n", strlen("Failed to execute show_connections.sh\n"));
+      close(fd[WRITE_END]);
+      exit(1);
+  }else{
+      close(fd[WRITE_END]);
+      wait(&pid);
+      read(fd[READ_END], buffer, sizeof(char)*1000);
+      //write(1, buffer, strlen(buffer));
+      close(fd[READ_END]);
+  }
+  return buffer;
+}
+
+char * readFile(char * path, int * longitud){
+  int fd,retval;
+  char * buffer = malloc(sizeof(char));
+  char * buffer2 = malloc(sizeof(char));
+
+  /*opening the file in read-only mode*/
+  if ((fd = open(path, O_RDONLY)) < 0) {
+      perror("Problem in opening the file");
+			return "ERROR";
+      exit(1);
+  }
+
+  /*reading bytes from the fd and writing it to the buffer*/
+  int i = 0;
+  while ((retval = read(fd, buffer, 1)) > 0){
+      buffer2[i] = *buffer;
+      buffer2= realloc(buffer2, i+2);
+      i++;
+  }
+  if (retval < 0) {
+      perror("\nRead failure");
+      exit(1);
+  }
+  *longitud = i;
+  close(fd);
+  return buffer2;
+}
+/*Funcion que escribe el archivo de audio*/
+int writeFile(char * path, char * buffer, int longitud){
+  int fd,retval;
+
+
+  /*opening the file in read-only mode*/
+  if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0640)) < 0) {
+      perror("Problem in opening the file");
+			return -1;
+      exit(1);
+  }
+
+
+  /*reading bytes from the fd and writing it to the buffer*/
+
+  write(fd, buffer, longitud);
+  /*
+  int i = 0;
+  while ((retval = write(fd, buffer, strlen(buffer))) > 0){
+    i++;
+  }*/
+  if (retval < 0) {
+      perror("\nRead failure");
+      return -1;
+      exit(1);
+  }
+
+  close(fd);
+  return 0;
+
+}
+
 
 void CONEXION_enviarTrama(int fd, Trama trama){
 	write (fd, &(trama.type), sizeof(char));
 	char * infoHeader = malloc (sizeof(char) * strlen(trama.header));
 	sprintf(infoHeader, AUX, trama.header);
 	write (fd, infoHeader, strlen(infoHeader));
-	write (fd, &(trama.longitud), sizeof(int));
+	write (fd, &(trama.longitud), sizeof(short));
 	//if(trama.longitud!=0) {
 		char * data = malloc (sizeof(char) * (strlen((trama.data)) + 2));
 		sprintf(data, AUX, trama.data);
@@ -54,6 +138,7 @@ Funcion que se encarga de leer los archivos pasado por parametro y los devuelve.
 char * leeDirectorio(char * directorio) {
   struct dirent *de;
   char buff[100];
+
   char * audiosFiles = malloc(sizeof(char)*500);
   sprintf(buff, "./%s", directorio);
   DIR *dr = opendir(buff);
@@ -90,7 +175,7 @@ char * get_message(int fd, char delimiter) {
 }
 
 char * readUntillChar(char* s, char init ,char end){
-  char * aux = malloc(sizeof(char)*200);
+  char * aux = malloc(sizeof(char)*500);
   aux[0]=' ';
   unsigned int i = 0;
   for(i = 0; i<strlen(s); i++) {
@@ -115,9 +200,19 @@ int recepcioTrama(int fd, Trama *trama){
 	(*trama).type = -1;
 	read(fd, &((*trama).type), sizeof(short));
 	(*trama).header = get_message(fd, ']');
-	read(fd, &((*trama).longitud), sizeof(int));
+	read(fd, &((*trama).longitud), sizeof(short));
 	//if ((*trama).longitud == 0) return ((*trama).type - '0');
 	(*trama).data = get_message(fd, ']');
+	return ((*trama).type - '0');
+}
+
+int recepcioTramaAudio(int fd, Trama *trama){
+	(*trama).type = -1;
+	read(fd, &((*trama).type), sizeof(short));
+	(*trama).header = get_message(fd, ']');
+	read(fd, &((*trama).longitud), sizeof(short));
+	//if ((*trama).longitud == 0) return ((*trama).type - '0');
+	read(fd, &((*trama).data), sizeof(char) * (*trama).longitud);
 	return ((*trama).type - '0');
 }
 
@@ -163,14 +258,23 @@ int findClientAndDelete(char * usnm, int * port_delete, char ** users, int q_use
 void * CONEXION_gestionFdClientes(void * fd_c) {
 	Trama trama;
 	Trama trama2;
+  Trama * trama3 = malloc(sizeof(Trama));
+	char * aux = malloc(sizeof(char)*500);
+	char * buff3 = malloc(sizeof(char)*128);
+	char * fileAudio;
   char * buff = malloc(sizeof(char)*128);
 	char * buff2 = malloc(sizeof(char)*128);
 	User * user = MAIN_getUser();
 	int t;
+	unsigned int sizeRead, leido ,w, longitud;
+	sizeRead = 0;
+	char * md5Audio;
+  int count;
 	char * usnm;
 	int * fc = (int *) fd_c;
 	int fd_cl = *fc;
 	int index;
+  longitud = 0;
 	while (1){
 		t = recepcioTrama(fd_cl, &trama);
 		switch (t) {
@@ -184,9 +288,7 @@ void * CONEXION_gestionFdClientes(void * fd_c) {
 				(*user).port_asociated_user_del_server = realloc((*user).port_asociated_user_del_server, (*user).q_users_del_server + 1);
 				strcpy((*user).users_del_server[(*user).q_users_del_server - 1], trama.data);
 				(*user).port_asociated_user_del_server[(*user).q_users_del_server - 1] = fd_client;
-
         sprintf(buff, USER_CONNECTED, readUntillChar(trama.data, '[' ,']'));
-
         write(1, buff, strlen(buff));
 				trama2.type = '1';
 				trama2.header = malloc (sizeof(char) * strlen(CON_OK));
@@ -222,8 +324,45 @@ void * CONEXION_gestionFdClientes(void * fd_c) {
 				trama2.header = malloc (sizeof(char) * strlen("[LIST_AUDIOS]")+2);
 				strcpy(trama2.header, "LIST_AUDIOS");
 				trama2.longitud = 0;
-
 				CONEXION_enviarTrama(fd_client, trama2);
+				break;
+			case 5:
+			  trama2.type = '5';
+				sprintf(buff3, "./%s/%s", (*user).audios, readUntillChar(trama.data, '[', ']'));
+		   	fileAudio = readFile(buff3, &longitud);
+				if(strcmp(fileAudio, "ERROR")==0) {
+					trama2.header = malloc (sizeof(char) * strlen("[AUDIO_KO]")+2);
+					strcpy(trama2.header, "AUDIO_KO");
+					trama2.longitud = 0;
+					strcpy(trama2.data, "");
+				}else {
+					leido = 0;
+					md5Audio = ejecutaMD5(buff3);
+					while(sizeRead < longitud) {
+            count = 0;
+						for(w=leido; w<(500+leido); w++) {
+            	aux[w%500] = fileAudio[w];
+							sizeRead++;
+              count++;
+							if(sizeRead == longitud) break;
+						}
+						leido = sizeRead;
+						trama2.header = malloc (sizeof(char) * strlen("[AUDIO_RSPNS]"));
+						strcpy(trama2.header, "AUDIO_RSPNS");
+						trama2.longitud = count;
+            printf("LONG %d\n", trama2.longitud );
+						trama2.data = aux;
+						CONEXION_enviarTrama(fd_client, trama2);
+
+						free(aux);
+						aux = malloc(sizeof(char)*500);
+					}
+					strcpy(trama2.header, "EOF");
+					trama2.longitud = strlen(md5Audio);
+					trama2.data = md5Audio;
+					CONEXION_enviarTrama(fd_client, trama2);
+
+				}
 				break;
 			case 6:
 				trama2.type = '6';
@@ -231,7 +370,6 @@ void * CONEXION_gestionFdClientes(void * fd_c) {
 				strcpy(trama2.header, "CONKO");
 				trama2.longitud = 0;
 				trama2.data = "";
-
 				CONEXION_enviarTrama(fd_client, trama2);
 				write(1, trama.data, strlen(trama.data));
 				sprintf(buff2, "El cliente %s se ha desconectado\n",  readUntillChar(trama.data, '[', ']'));
@@ -342,6 +480,72 @@ char * ConexionModo4(int socket_conn) {
 	CONEXION_enviarTrama(socket_conn, trama);
 	recepcioTrama(socket_conn, &trama2);
 	return readUntillChar(trama2.data, '[', ']');
+}
+
+
+char * readDataXchars(char * data, short longitud) {
+  char * buffer = malloc(sizeof(char) * longitud);
+  int i;
+  for(i = 1; i < (longitud+1); i++) {
+    buffer[i-1]= data[i];
+  }
+  return buffer;
+}
+
+int ConexionModo5(int socket_conn, char * texto, char * audios) {
+	Trama trama;
+	Trama * trama2 = malloc(sizeof(Trama));
+	int i = 0;
+  char * aux;
+	char * buffer;
+  char buff[100];
+	trama.type = '5';
+	trama.header = malloc (sizeof(char) * strlen("[AUDIO_RQST]"));
+	strcpy(trama.header, "AUDIO_RQST");
+	trama.longitud = strlen(texto);
+	trama.data = texto;
+	int previousLong;
+	CONEXION_enviarTrama(socket_conn, trama);
+	recepcioTrama(socket_conn, trama2);
+  printf("HEADER 1 %s\n", trama2->header );
+
+	if(strcmp((*trama2).header, "[AUDIO_KO]") == 0) {
+		return 0;
+	}
+	if(strcmp((*trama2).header, "AUDIO_RSPNS]") == 0 || strcmp((*trama2).header, "[AUDIO_RSPNS]") == 0){
+		buffer = malloc(sizeof(char)* (*trama2).longitud);
+		buffer = readDataXchars((*trama2).data, (*trama2).longitud);
+    printf("BUFFER 1 %s\n", buffer );
+		previousLong = (*trama2).longitud;
+
+  	while (1) {
+      free(trama2);
+      trama2 = malloc(sizeof(Trama));
+  		recepcioTrama(socket_conn, trama2);
+      aux = readDataXchars((*trama2).data, (*trama2).longitud);
+
+  			if(strcmp((*trama2).header, "EOF]") == 0 || strcmp((*trama2).header, "[EOF]") == 0) {
+
+  				break;
+  			} else {
+  				buffer = realloc(buffer, (*trama2).longitud+previousLong);
+          for(i = previousLong; i < (*trama2).longitud + previousLong; i++) {
+  					buffer[i] = aux[i-previousLong];
+  				}
+          previousLong = (*trama2).longitud+previousLong;
+          printf("long %d\n", (*trama2).longitud );
+
+
+  			}
+      }
+  	}
+
+	printf("Y el BUFFER ES: %s\n", buffer);
+  sprintf(buff, "./%s/%s", audios, texto);
+  writeFile(buff, buffer, previousLong);
+  printf("Y EL NUEVO MD5 es: %s\n", ejecutaMD5(buff));
+	return 1;
+
 }
 
 int ConexionModo6(int socket_conn, char * texto) {
