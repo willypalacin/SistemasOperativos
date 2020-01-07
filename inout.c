@@ -27,6 +27,7 @@ char * readShowCon(User * user) {
       exit(1);
   }else{
       close(fd[WRITE_END]);
+      wait(&pid);
       read(fd[READ_END], buffer, sizeof(char)*1000);
       //write(1, buffer, strlen(buffer));
       close(fd[READ_END]);
@@ -229,6 +230,36 @@ int getUsernamePortAsociated(int puerto, int * arr_puertos, int q) {
   return i;
 }
 
+char * readTillCharXTimes(char* s, char init ,char end, int times) {
+  char * aux = malloc(sizeof(char)*200);
+  aux[0]=' ';
+  int counter = 0;
+  unsigned int i = 0;
+  for(i = 0; i<strlen(s); i++) {
+    if(s[i] == init){
+      counter++;
+      if (times == 0) break;
+
+    }
+    if (counter-1 >= times) break;
+  }
+  i++;
+  int j = 0;
+  while (s[i] != end) {
+    aux[j] = s[i];
+    i++; j++;
+    if(i>=strlen(s)) break;
+  }
+  if(i>strlen(s)) {
+    aux[0]=' ';
+    aux[1]='\0';
+  }
+  aux[i - 1] = '\0';
+  return aux;
+
+
+}
+
 void parseaPuertos(char * s, User * user){
   unsigned int i;
   unsigned int counter = 0;
@@ -244,17 +275,22 @@ void parseaPuertos(char * s, User * user){
   }
   (*user).q_ports_available = counter;
   (*user).ports_available = malloc(sizeof(int) * counter);
-  sprintf(buff, CONEX_AVAIL, counter);
+  sprintf(buff, CONEX_AVAIL, counter-1);
   write(1, buff, strlen(buff));
+  int j=0;
   for(i=0;i<counter; i++) {
-    texto = readTillChar(s,'p','n');
+    texto = readTillCharXTimes(s,'t','\n', i);
     puerto = readTillChar(texto, ' ', ' ');
-    (*user).ports_available[i] = atoi(puerto);
-    i_usnm = getUsernamePortAsociated(atoi(puerto), (*user).real_port_asociated_user, (*user).q_users);
-    sprintf(buff2, PORT, (*user).ports_available[i]);
-    write(1, buff2, strlen(buff2));
-    if (i_usnm != -1) write(1, (*user).users[i_usnm], strlen((*user).users[i_usnm]));
-    write(1, "\n", 1);
+    if(atoi(puerto)!= atoi((*user).port)){
+      (*user).ports_available[j] = atoi(puerto);
+      (*user).ports_available = realloc((*user).ports_available, j+2);
+      i_usnm = getUsernamePortAsociated(atoi(puerto), (*user).real_port_asociated_user, (*user).q_users);
+      sprintf(buff2, PORT, (*user).ports_available[j]);
+      write(1, buff2, strlen(buff2));
+      if (i_usnm != -1) write(1, (*user).users[i_usnm], strlen((*user).users[i_usnm]));
+      write(1, "\n", 1);
+      j++;
+    }
   }
 }
 
@@ -287,7 +323,7 @@ int checkString(User * user, char * s) {
       t2 = CONEXION_tryConnection((*user).ip, opcion);
       ConexionModo1(t2, user);
       (*user).real_port_asociated_user[(*user).q_users - 1] = opcion;
-      if (t2 > 0){
+      if (t2 > 0) {
         sprintf(port, "%d", opcion);
         write(1, port, strlen(port));
         write(1, CONNECTED, strlen(CONNECTED));
@@ -321,8 +357,17 @@ int checkString(User * user, char * s) {
   }
   else if(strcasecmp(substring(s, 0, 9), STRING_4) == 0) { //Comprueba si hay BROADCAST
      int error;
+     int i;
      texto = readTillChar(s,'\"','\"');
      error = controlError(texto, "a", 4);
+     for (i = 0; i < (*user).q_users; i++){
+       ConexionModo3((*user).port_asociated_user[i], texto);
+     }
+
+     for (i = 0; i < (*user).q_users; i++){
+       CONEXION_receiveBroadcast((*user).port_asociated_user[i], (*user).users[i]);
+     }
+     CONEXION_mutexDestroy();
      return error;
   }
   else if(strcasecmp(substring(s, 0, 11), STRING_5) == 0) { //SHOW AUDIOS

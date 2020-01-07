@@ -23,7 +23,7 @@ typedef struct {
   int q_users;
   //---------------
   //Estructura del servidor
-  int server_socket;
+  int * server_socket;
   char mensaje[180];
   char ** users_del_server;
   int * port_asociated_user_del_server;

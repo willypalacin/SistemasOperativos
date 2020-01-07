@@ -6,7 +6,6 @@
 #include "main.h"
 #include "inout.h"
 
-
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,7 +42,10 @@ int ConexionModo2(int socket_conn, char * texto);
 int ConexionModo1(int socket_conn, User * user);
 int ConexionModo0(int socket_conn, User * user);
 int ConexionModo6(int socket_conn, char * texto);
+int ConexionModo3(int socket_conn, char * texto);
 char * ConexionModo4(int socket_conn);
 int ConexionModo5(int socket_conn, char * texto, char * audios);
+void CONEXION_receiveBroadcast(int socket_conn, char * name);
+void CONEXION_mutexDestroy();
 
 #endif

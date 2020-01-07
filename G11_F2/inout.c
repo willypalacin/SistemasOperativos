@@ -28,6 +28,7 @@ char * readShowCon(User * user) {
   }else{
       close(fd[WRITE_END]);
       read(fd[READ_END], buffer, sizeof(char)*1000);
+      wait(&pid);
       //write(1, buffer, strlen(buffer));
       close(fd[READ_END]);
   }
