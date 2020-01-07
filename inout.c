@@ -241,7 +241,6 @@ void parseaPuertos(char * s, User * user){
     if(s[i] == '\n') {
       counter++;
     }
-
   }
   (*user).q_ports_available = counter;
   (*user).ports_available = malloc(sizeof(int) * counter);

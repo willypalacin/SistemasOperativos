@@ -1,0 +1,45 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \
+for i in $v\
+ a=`"$i" | awk -F- \{'print $2'\} | sed 's/\\r$//'`\
+do\
+   if [ "$val" == "$a" ]; then\
+\
+      user=`"$v" awk -F- \{'print $1'\} | sed 's/\\r$//'`\
+      pid=`"$v" awk -F- \{'print $2'\} | sed 's/\\r$//'`\
+      cpu=`"$v" awk -F- \{'print $3'\} | sed 's/\\r$//'`\
+      mem=`"$v" awk -F- \{'print $4'\} | sed 's/\\r$//'`\
+      vsz=`"$v" awk -F- \{'print $5'\} | sed 's/\\r$//'`\
+      command=`"$v" awk -F- \{'print $6'\} | sed 's/\\r$//'`\
+      ok="1"\
+   fi\
+done\
+if [ "$ok" == "1" ]; then\
+  echo -e "<table>\
+ <tr>\
+   <th>user</th>\
+   <th>pid</th>\
+   <th>%cpu</th>\
+   <th>%memoria</th>\
+   <th>VSZ</th>\
+   <th>Command</th>\
+ </tr>\
+ <tr>\
+   <td>$user</td>\
+   <td>$pid</td>\
+   <td>$cpu</td>\
+   <td>$mem</td>\
+   <td>$vsz</td>\
+   <td>$command</td>\
+ </tr>"\
+echo -e "</table>"\
+else\
+  echo -e "<p>El proceso introducido no existe</p>"\
+fi\
+fi}
