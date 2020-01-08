@@ -362,6 +362,7 @@ void * CONEXION_gestionFdClientes(void * fd_c) {
 				(*user).q_users_del_server = (*user).q_users_del_server + 1;
 				(*user).users_del_server = realloc((*user).users_del_server, (*user).q_users_del_server + 1);
 				(*user).port_asociated_user_del_server = realloc((*user).port_asociated_user_del_server, (*user).q_users_del_server + 1);
+        (*user).users_del_server[(*user).q_users_del_server - 1] = malloc(sizeof(char)*100);
 				strcpy((*user).users_del_server[(*user).q_users_del_server - 1], trama.data);
 				(*user).port_asociated_user_del_server[(*user).q_users_del_server - 1] = fd_cl;
         sprintf(buff, USER_CONNECTED, readUntillChar(trama.data, '[' ,']'));
